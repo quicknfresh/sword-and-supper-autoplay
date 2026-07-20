@@ -2,40 +2,45 @@
 
 Tampermonkey userscripts for **Sword & Supper** on Reddit.
 
-## Install
+## Android setup
 
-### Android Mobile Full
+Android now uses the proven Standard automation plus a separate lightweight UI skin. The skin contains no gameplay automation and does not load a second copy of the Standard script.
 
-Uses the complete Standard automation logic, with a touch-friendly bottom control panel for Android.
+### 1. Install Standard automation
 
-[![Install Android Mobile Full](https://img.shields.io/badge/Install-Android%20Mobile%20Full-2E7D32?style=for-the-badge&logo=android)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay-mobile.user.js?full=1)
+[![Install Standard Automation](https://img.shields.io/badge/1.%20Install-Standard%20Automation-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
 
-### Standard version
+### 2. Install Android UI skin
 
-Recommended for desktop and available as a fallback on Android.
+[![Install Android UI Skin](https://img.shields.io/badge/2.%20Install-Android%20UI%20Skin-2E7D32?style=for-the-badge&logo=android)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay-mobile.user.js?full=1)
 
-[![Install Standard Version](https://img.shields.io/badge/Install-Standard%20Version-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
+Both scripts should be enabled on Android:
 
-> Enable only one Sword & Supper userscript at a time. Disable or delete the Standard version before enabling Mobile Full.
+- **Sword & Supper Auto Play v3.16.15** performs the automation.
+- **Sword & Supper Mobile UI Skin v3.16.21** only restyles the control panel.
 
-## Android installation
+> Delete the old **Sword & Supper Auto Play Mobile Full v3.16.20** before installing the UI skin. The old version loaded another copy of the automation and could slow game startup.
+
+## Firefox Android installation
 
 1. Install **Tampermonkey** in Firefox for Android.
 2. Open **Firefox menu → Extensions → Tampermonkey → Permissions**.
 3. Allow access to both `reddit.com` and `devvit.net`.
-4. Open the **Android Mobile Full** installation button above in Firefox.
-5. Press **Install** in Tampermonkey.
-6. Open Sword & Supper in Firefox itself, not in the Reddit app's internal browser.
+4. Install the Standard Automation button above.
+5. Install the Android UI Skin button above.
+6. Keep both enabled, but disable any older Mobile Lite or Mobile Full builds.
+7. Open Sword & Supper in Firefox itself, not in the Reddit app's internal browser.
 
-## Mobile Full panel
+## Mobile UI
 
-- Large touch-friendly buttons in a two-row bottom panel
-- Collapse and expand control
-- Automatically collapses on the inline Reddit preview so it does not cover **Start Mission**
-- No blur or backdrop effects
-- Full Standard automation is loaded unchanged through `@require`
+- Compact dark dock at the bottom
+- One horizontally scrollable row of touch controls
+- 42-pixel touch targets
+- No blur or backdrop filters
+- Hidden while the inline **Start Mission** preview is visible
+- No observers, polling loops or duplicated automation in the UI skin
 
-The Start Mission button itself requires a genuine user or Android Accessibility tap because Devvit rejects JavaScript-generated untrusted events.
+The **Start Mission** button still requires a genuine user or Android Accessibility tap because Devvit rejects JavaScript-generated untrusted events.
 
 ## Features
 
@@ -68,4 +73,4 @@ This is an unofficial community userscript and is not affiliated with Reddit or 
 
 ## Credits
 
-Original script by **Eric** (`u/echo-foxtrot-delta`). Firefox Android compatibility and mobile interface maintenance by **quicknfresh**.
+Original automation script by **Eric** (`u/echo-foxtrot-delta`). Firefox Android compatibility and mobile interface maintenance by **quicknfresh**.
