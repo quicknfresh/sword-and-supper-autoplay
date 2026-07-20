@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Sword & Supper Auto Play Mobile Lite
 // @namespace    https://reddit.com/user/echo-foxtrot-delta/
-// @version      3.16.16
-// @description  Android-optimised Sword & Supper autoplay with one lightweight scheduler and simple controls.
+// @version      3.16.17
+// @description  Android-optimised Sword & Supper autoplay with working map creation and farming-gear equipping.
 // @author       Eric; mobile optimisation by quicknfresh
 // @match        *://*.reddit.com/*
 // @match        *://*.devvit.net/*
@@ -14,39 +14,55 @@
     "use strict";
 
     const CONFIG = {
-        tickMs: 900,
+        tickMs: 850,
         skillAuto: JSON.parse(localStorage.getItem("skillAuto") || "true"),
         shrineAuto: JSON.parse(localStorage.getItem("shrineAuto") || "true"),
         monolithAuto: JSON.parse(localStorage.getItem("monolithAuto") || "true"),
         houseAutoYes: JSON.parse(localStorage.getItem("houseAutoYes") || "true"),
         miniBossAutoFight: JSON.parse(localStorage.getItem("miniBossAutoFight") || "true"),
         mapAutoCreate: JSON.parse(localStorage.getItem("mapAutoCreate") || "true"),
+        autoFarmingGear: JSON.parse(localStorage.getItem("autoFarmingGear") || "false"),
         loopEnabled: JSON.parse(localStorage.getItem("loopEnabled") || "false"),
         preferredSkills: JSON.parse(localStorage.getItem("preferredSkills") || '["bolt on rage","heal on rage","add rage on heal"]'),
         shrinePriority: JSON.parse(localStorage.getItem("shrinePriority") || '["attack","crit rate","defense","hp","speed"]'),
         monolithPriority: JSON.parse(localStorage.getItem("monolithPriority") || '["attack","dodge rate","heal"]')
     };
 
+    const FARMING_TARGETS = [
+        "Wrathful Visor EX",
+        "Sower's Lament Lvl 3", "Sower’s Lament Lvl 3",
+        "Ember Droplet Ultimate",
+        "Frostflake Band EX",
+        "Recovery Vest EX",
+        "Knife Collector's Belt Ultimate", "Knife Collector’s Belt Ultimate",
+        "Map: Mountain Pass", "Map: Outer Temple", "Map: Forbidden City",
+        "Map: Ruined Path", "Map: Seaside Cliffs"
+    ];
+
     let running = localStorage.getItem("mobileLiteRunning") === "true";
     let busyUntil = 0;
     let lastMissionClick = 0;
+    let farmingBusy = false;
 
     const visible = (el) => !!el && el.offsetParent !== null && !el.disabled;
-    const click = (el) => {
+    const save = (key) => localStorage.setItem(key, JSON.stringify(CONFIG[key]));
+    const firstVisible = (selector, root = document) => Array.from(root.querySelectorAll(selector)).find(visible);
+
+    function click(el) {
         if (!visible(el)) return false;
         try { el.click(); return true; } catch (_) {}
         try {
             el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
             return true;
         } catch (_) { return false; }
-    };
-    const firstVisible = (selector) => Array.from(document.querySelectorAll(selector)).find(visible);
-    const buttonsByText = (selector, matcher) => Array.from(document.querySelectorAll(selector)).find((el) => visible(el) && matcher(el.textContent.trim().toLowerCase()));
-    const save = (key) => localStorage.setItem(key, JSON.stringify(CONFIG[key]));
+    }
+
+    function closestButton(el) {
+        return el?.closest("button, .mission-create-submit-button") || el;
+    }
 
     function pickChoice() {
-        const header = document.querySelector(".ui-panel-header");
-        const heading = header ? header.textContent.trim().toLowerCase() : "";
+        const heading = document.querySelector(".ui-panel-header")?.textContent.trim().toLowerCase() || "";
         const choices = Array.from(document.querySelectorAll(".skill-button-label")).filter(visible);
         if (!choices.length) return false;
 
@@ -64,8 +80,8 @@
 
         if (CONFIG.monolithAuto && heading.includes("monolith")) {
             const loseHealth = choices.find((el) => {
-                const t = el.textContent.toLowerCase();
-                return t.includes("lose") && t.includes("health");
+                const text = el.textContent.toLowerCase();
+                return text.includes("lose") && text.includes("health");
             });
             return click(loseHealth || choices.find((el) => /refuse/i.test(el.textContent)) || choices[0]);
         }
@@ -79,36 +95,57 @@
         }
 
         if (heading.includes("mysterious building")) {
-            const target = choices.find((el) => CONFIG.houseAutoYes ? /^yes$/i.test(el.textContent.trim()) : /^no$/i.test(el.textContent.trim()));
-            return click(target);
+            return click(choices.find((el) => CONFIG.houseAutoYes ? /^yes$/i.test(el.textContent.trim()) : /^no$/i.test(el.textContent.trim())));
         }
 
         if (heading.includes("dangerous creatures") && heading.includes("investigate")) {
-            const target = choices.find((el) => CONFIG.miniBossAutoFight ? /fight/i.test(el.textContent) : /nope|no/i.test(el.textContent));
-            return click(target);
+            return click(choices.find((el) => CONFIG.miniBossAutoFight ? /fight/i.test(el.textContent) : /nope|no/i.test(el.textContent)));
         }
 
         return false;
     }
 
-    function useItemOrClaim() {
-        if (CONFIG.mapAutoCreate) {
-            const modal = firstVisible(".item-modal-body");
-            if (modal && modal.dataset.mobileLiteBusy !== "1") {
-                const use = firstVisible.call ? null : null;
-                const useButton = Array.from(modal.querySelectorAll("button")).find(visible);
-                if (useButton) {
-                    modal.dataset.mobileLiteBusy = "1";
-                    click(useButton);
-                    setTimeout(() => { delete modal.dataset.mobileLiteBusy; }, 2500);
-                    busyUntil = Date.now() + 800;
-                    return true;
-                }
-            }
-        }
+    function useMapItem() {
+        if (!CONFIG.mapAutoCreate) return false;
+        const modal = firstVisible(".item-modal-body");
+        if (!modal || modal.dataset.mobileLiteBusy === "1") return false;
 
+        const actions = modal.querySelector(".item-modal-actions");
+        const useButton = actions ? Array.from(actions.querySelectorAll("button")).find(visible) : null;
+        if (!useButton) return false;
+
+        modal.dataset.mobileLiteBusy = "1";
+        setTimeout(() => click(useButton), 350);
+        setTimeout(() => { delete modal.dataset.mobileLiteBusy; }, 5000);
+        busyUntil = Date.now() + 900;
+        return true;
+    }
+
+    function claimReward() {
         const claim = Array.from(document.querySelectorAll(".claim-button")).find((el) => visible(el) && !el.classList.contains("inactive"));
-        return click(claim);
+        if (!claim || claim.dataset.mobileLiteBusy === "1") return false;
+        claim.dataset.mobileLiteBusy = "1";
+        click(claim);
+        setTimeout(() => delete claim.dataset.mobileLiteBusy, 1200);
+        return true;
+    }
+
+    function equipFarmingGear() {
+        if (!CONFIG.autoFarmingGear || farmingBusy) return false;
+        const grid = firstVisible(".virtual-items-grid");
+        if (!grid) return false;
+        if (firstVisible(".item-modal-body")) return false;
+
+        const target = Array.from(grid.querySelectorAll("img.item-image")).find((img) =>
+            visible(img) && img.alt && FARMING_TARGETS.some((name) => img.alt.includes(name))
+        );
+        if (!target) return false;
+
+        farmingBusy = true;
+        click(target);
+        setTimeout(() => { farmingBusy = false; }, 3000);
+        busyUntil = Date.now() + 900;
+        return true;
     }
 
     function createMission() {
@@ -119,22 +156,34 @@
             const scenario = container.querySelector(".randomize-scenario-section");
             if (scenario && scenario.dataset.mobileLiteBusy !== "1") {
                 scenario.dataset.mobileLiteBusy = "1";
-                click(container.querySelector(".autocomplete-button, img[alt*='Randomize']"));
-                setTimeout(() => click(container.querySelector(".mission-create-submit-button, img[alt='Continue']")?.closest("button, .mission-create-submit-button") || container.querySelector(".mission-create-submit-button")), 700);
-                setTimeout(() => delete scenario.dataset.mobileLiteBusy, 2500);
-                busyUntil = Date.now() + 1200;
+                const dice = container.querySelector(".autocomplete-button, img[alt*='Randomize']");
+                if (dice) click(closestButton(dice));
+                setTimeout(() => {
+                    const image = container.querySelector("img[alt='Continue']");
+                    const button = image ? closestButton(image) : container.querySelector(".mission-create-submit-button");
+                    click(button);
+                }, 1150);
+                setTimeout(() => delete scenario.dataset.mobileLiteBusy, 3000);
+                busyUntil = Date.now() + 1500;
                 return true;
             }
 
-            const food = container.querySelector(".food-choices");
-            if (food && food.dataset.mobileLiteBusy !== "1") {
-                food.dataset.mobileLiteBusy = "1";
+            const foodSection = container.querySelector(".food-choices");
+            if (foodSection && foodSection.dataset.mobileLiteBusy !== "1") {
+                foodSection.dataset.mobileLiteBusy = "1";
                 const foods = Array.from(container.querySelectorAll(".food-choice")).filter(visible);
                 if (foods.length) click(foods[Math.floor(Math.random() * foods.length)]);
-                setTimeout(() => click(container.querySelector(".autocomplete-button, img[alt*='Randomize']")), 350);
-                setTimeout(() => click(container.querySelector(".mission-create-submit-button, img[alt='Continue']")?.closest("button, .mission-create-submit-button") || container.querySelector(".mission-create-submit-button")), 800);
-                setTimeout(() => delete food.dataset.mobileLiteBusy, 2800);
-                busyUntil = Date.now() + 1500;
+                setTimeout(() => {
+                    const dice = container.querySelector(".autocomplete-button, img[alt*='Randomize']");
+                    if (dice) click(closestButton(dice));
+                }, 300);
+                setTimeout(() => {
+                    const image = container.querySelector("img[alt='Continue']");
+                    const button = image ? closestButton(image) : container.querySelector(".mission-create-submit-button");
+                    click(button);
+                }, 700);
+                setTimeout(() => delete foodSection.dataset.mobileLiteBusy, 3000);
+                busyUntil = Date.now() + 1400;
                 return true;
             }
         }
@@ -142,34 +191,49 @@
         const form = firstVisible("form.mission-create-form");
         if (!form || form.dataset.mobileLiteBusy === "1") return false;
         const input = form.querySelector("input[name='title']");
-        const summaries = Array.from(document.querySelectorAll(".mission-create-summary"));
-        if (!input || !summaries.length || document.activeElement === input) return false;
+        const rows = Array.from(document.querySelectorAll(".mission-create-summary"));
+        if (!input || !rows.length || document.activeElement === input) return false;
 
         let target = "", level = "", difficulty = "⭐⭐⭐", food = "";
-        for (const row of summaries) {
-            const text = row.textContent.replace(/\s+/g, " ").trim();
+        let bossRush = false;
+        for (const row of rows) {
+            const text = row.textContent.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ").trim();
+            if (text.toUpperCase().includes("BOSS RUSH")) bossRush = true;
             if (text.startsWith("Target:")) target = text.replace("Target:", "").trim();
             else if (text.includes("Rec. Level:")) level = text.split("Rec. Level:")[1].replace(/~/g, "-").replace(/\s+/g, "").trim();
             else if (text.startsWith("Food:")) food = text.replace("Food:", "").trim();
             else if (text.startsWith("Difficulty:")) {
-                const stars = text.match(/⭐|★|🌟/g);
-                if (stars?.length) difficulty = "⭐".repeat(stars.length);
+                const goldStars = Array.from(row.querySelectorAll("span")).filter((span) => {
+                    const style = span.getAttribute("style") || "";
+                    return style.includes("gold") || span.style.color === "gold";
+                });
+                const textStars = text.match(/⭐|★|🌟/g);
+                if (goldStars.length) difficulty = "⭐".repeat(goldStars.length);
+                else if (textStars?.length) difficulty = "⭐".repeat(textStars.length);
             }
         }
+        if (bossRush) difficulty = "BOSS RUSH";
         if (!target || !level) return false;
 
         const title = `Level ${level} ${difficulty} ${target} ${food}`.replace(/\s+/g, " ").trim();
         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
         if (setter) setter.call(input, title); else input.value = title;
-        input.dispatchEvent(new Event("input", { bubbles: true }));
-        input.dispatchEvent(new Event("change", { bubbles: true }));
+        if (input._valueTracker) input._valueTracker.setValue("");
+        input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
 
-        const redirect = form.querySelector("input#doRedirect");
-        if (redirect?.checked) click(redirect);
         form.dataset.mobileLiteBusy = "1";
-        setTimeout(() => click(form.querySelector("img[alt*='Create']")?.closest(".mission-create-submit-button, button") || form.querySelector(".mission-create-submit-button")), 500);
-        setTimeout(() => delete form.dataset.mobileLiteBusy, 3500);
-        busyUntil = Date.now() + 1200;
+        setTimeout(() => {
+            const redirect = form.querySelector("input#doRedirect");
+            if (redirect?.checked) click(redirect);
+        }, 500);
+        setTimeout(() => {
+            const image = form.querySelector("img[alt*='Create']");
+            const button = image ? closestButton(image) : form.querySelector(".mission-create-submit-button");
+            click(button);
+        }, 1100);
+        setTimeout(() => delete form.dataset.mobileLiteBusy, 4200);
+        busyUntil = Date.now() + 1700;
         return true;
     }
 
@@ -182,29 +246,31 @@
         }
         if (Date.now() - lastMissionClick < 6000) return false;
         const link = Array.from(document.querySelectorAll(".mission-link-content")).find((el) => visible(el) && !/completed/i.test(el.textContent));
-        if (link) {
-            lastMissionClick = Date.now();
-            return click(link);
-        }
-        return false;
+        if (!link) return false;
+        lastMissionClick = Date.now();
+        return click(link);
     }
 
     function battle() {
-        const continueButton = firstVisible(".button-container .continue-button, .continue-button-container .continue-button");
-        if (click(continueButton)) return true;
-        const dismiss = firstVisible(".ui-overlay-content .modal.shown .dismiss-button");
-        if (click(dismiss)) return true;
+        if (click(firstVisible(".button-container .continue-button, .continue-button-container .continue-button"))) return true;
+        if (click(firstVisible(".ui-overlay-content .modal.shown .dismiss-button"))) return true;
         if (pickChoice()) return true;
-        const advance = buttonsByText(".advance-button", (text) => ["advance", "battle", "descend", "start"].some((word) => text.includes(word)));
+
+        const advance = Array.from(document.querySelectorAll(".advance-button")).find((el) => {
+            const text = el.textContent.trim().toLowerCase();
+            return visible(el) && ["advance", "battle", "descend", "start"].some((word) => text.includes(word));
+        });
         if (click(advance)) return true;
-        const skip = buttonsByText(".skip-button, .skip-text", (text) => text.includes("skip"));
-        return click(skip);
+
+        return click(Array.from(document.querySelectorAll(".skip-button, .skip-text")).find((el) => visible(el) && /skip/i.test(el.textContent)));
     }
 
     function tick() {
         ensurePanel();
         if (!running || document.hidden || Date.now() < busyUntil) return;
-        if (useItemOrClaim()) return;
+        if (useMapItem()) return;
+        if (claimReward()) return;
+        if (equipFarmingGear()) return;
         if (createMission()) return;
         if (missionLoop()) return;
         battle();
@@ -256,6 +322,7 @@
             makeToggle("🛖", "houseAutoYes", "Choose Yes at the mysterious building"),
             makeToggle("👻", "miniBossAutoFight", "Fight dangerous creatures"),
             makeToggle("🗺️", "mapAutoCreate", "Automatic map creation"),
+            makeToggle("🧑‍🌾", "autoFarmingGear", "Automatic farming-gear equipping"),
             makeToggle("🔄", "loopEnabled", "Automatically continue to another mission")
         );
 
@@ -274,7 +341,6 @@
         });
         panel.addEventListener("pointerup", () => { dragId = null; });
         panel.addEventListener("pointercancel", () => { dragId = null; });
-
         document.body.appendChild(panel);
     }
 
