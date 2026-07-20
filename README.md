@@ -1,26 +1,38 @@
 # Sword & Supper Auto Play
 
-A Tampermonkey userscript for **Sword & Supper** on Reddit, including fixes for Firefox on Android.
-
-[![Install in Tampermonkey](https://img.shields.io/badge/Install%20in-Tampermonkey-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
-
-> **Previously installed version `3.16.15.1`?** That was an incorrect loader build. Delete it from Tampermonkey first, then use the install button above. The repository now serves the full autoplay script directly.
+Tampermonkey userscripts for **Sword & Supper** on Reddit.
 
 ## Install
 
-1. Install the **Tampermonkey** extension in your browser.
-2. If Tampermonkey shows version `3.16.15.1` containing `GM_xmlhttpRequest`, delete that old script first.
-3. Tap the **Install in Tampermonkey** button above.
-4. Confirm that the installation screen shows the full autoplay source and `@grant none`, not the old loader.
-5. Press **Install**.
-6. Allow Tampermonkey access to both `reddit.com` and `devvit.net`.
-7. Open Sword & Supper in a normal browser tab and reload the game.
+### Standard version
 
-### Firefox Android
+Best for desktop and faster devices. Includes the full feature set and Firefox Android compatibility fixes.
 
-In Firefox, open **Menu → Extensions → Tampermonkey → Permissions** and allow access to Reddit and Devvit. The game must be opened in Firefox itself, not through the Reddit app's internal browser.
+[![Install Standard Version](https://img.shields.io/badge/Install-Standard%20Version-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
+
+### Android Mobile Lite
+
+Recommended when the game animation is choppy on an Android phone. This separate version uses a single slower scheduler, simpler clicks, no console logging, and a lighter control panel without blur effects.
+
+[![Install Android Mobile Lite](https://img.shields.io/badge/Install-Android%20Mobile%20Lite-2E7D32?style=for-the-badge&logo=android)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay-mobile-lite.user.js?full=1)
+
+> Do not enable both versions at the same time. Disable or remove the Standard version before testing Mobile Lite on Android.
+
+> **Previously installed version `3.16.15.1`?** That was an incorrect loader build. Delete it from Tampermonkey first, then install one of the full scripts above.
+
+## Android installation
+
+1. Install **Tampermonkey** in Firefox for Android.
+2. Open **Firefox menu → Extensions → Tampermonkey → Permissions**.
+3. Allow access to both `reddit.com` and `devvit.net`.
+4. Open the relevant installation button above in Firefox.
+5. Confirm that the installation page contains the complete source and `@grant none`.
+6. Press **Install**.
+7. Open Sword & Supper in Firefox itself, not in the Reddit app's internal browser.
 
 ## Features
+
+### Standard
 
 - Automatic battle advancing and skipping
 - Automatic skill, shrine, monolith, house and miniboss choices
@@ -30,22 +42,31 @@ In Firefox, open **Menu → Extensions → Tampermonkey → Permissions** and al
 - Optional farming-gear equipping
 - Saved preferences, panel position and panel size
 - Touch-compatible panel dragging and resizing
-- More reliable panel startup on Firefox Android
+
+### Mobile Lite
+
+- Core battle autoplay and skipping
+- Automatic skill, shrine, monolith, house and miniboss choices
+- Automatic item use and reward claiming
+- Automatic mission creation
+- Optional mission looping
+- Lightweight draggable Android control panel
+- Reduced DOM polling and rendering overhead
 
 ## Controls
 
 | Button | Function |
 |---|---|
 | `▶ / ⏸` | Start or pause autoplay |
-| `🥫` | Toggle preferred-skill selection; double-tap to edit priorities |
-| `🏯` | Toggle shrine choices; double-tap to edit priorities |
-| `🗿` | Toggle monolith choices; double-tap to edit priorities |
+| `🥫` | Toggle preferred-skill selection |
+| `🏯` | Toggle shrine choices |
+| `🗿` | Toggle monolith choices |
 | `🛖` | Toggle Yes/No for the mysterious building |
 | `👻` | Toggle fighting dangerous creatures |
 | `🗺️` | Toggle automatic map creation |
-| `🧑‍🌾` | Toggle automatic farming-gear equipping |
-| `🗑️` | Clear remembered mission history |
 | `🔄` | Toggle automatic chaining into another mission |
+
+The Standard version also includes `🧑‍🌾` for farming-gear equipping and `🗑️` for clearing remembered mission history.
 
 ## Disclaimer
 
@@ -53,4 +74,4 @@ This is an unofficial community userscript and is not affiliated with Reddit or 
 
 ## Credits
 
-Original script by **Eric** (`u/echo-foxtrot-delta`). Firefox Android compatibility update maintained in this repository by **quicknfresh**.
+Original script by **Eric** (`u/echo-foxtrot-delta`). Firefox Android compatibility and Mobile Lite maintenance by **quicknfresh**.
