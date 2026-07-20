@@ -3,14 +3,13 @@ name: Patch Mobile Simple UI.Vision trigger
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/patch-mobile-uivision.yml'
 
 permissions:
   contents: write
 
 jobs:
   patch:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
