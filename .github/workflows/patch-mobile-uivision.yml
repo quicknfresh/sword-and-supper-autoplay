@@ -1,18 +1,20 @@
 name: Patch Mobile Simple UI.Vision trigger
 
 on:
-  push:
-    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Add UI.Vision Start Mission bridge
         run: |
@@ -43,7 +45,6 @@ jobs:
           bridge_functions = '''    function installUiVisionBridge() {
         window.addEventListener("message", (event) => {
             const data = event.data;
-
             if (!data || data.type !== UIVISION_REQUEST_TYPE) return;
 
             let sourceHostname = "";
@@ -65,8 +66,6 @@ jobs:
                     },
                 })
             );
-
-            log(`Loop: requested UI.Vision macro "${UIVISION_MACRO_NAME}".`);
         });
     }
 
@@ -81,12 +80,7 @@ jobs:
                 startMissionButton.getClientRects().length > 0
             );
 
-            if (!CONFIG.loopEnabled) {
-                startMissionAlreadyTriggered = false;
-                return;
-            }
-
-            if (!isVisible) {
+            if (!CONFIG.loopEnabled || !isVisible) {
                 startMissionAlreadyTriggered = false;
                 return;
             }
@@ -99,8 +93,6 @@ jobs:
                     { type: UIVISION_REQUEST_TYPE },
                     "*"
                 );
-
-                log("Loop: Start Mission detected; requesting UI.Vision macro.");
             }
         };
 
@@ -114,11 +106,11 @@ jobs:
               raise SystemExit('detectModalAndOpen marker not found')
           text = text.replace(function_marker, bridge_functions, 1)
 
-          old_title = '                "Toggle auto-chaining into the next mission";'
-          new_title = '                "Toggle mission looping and UI.Vision Start Mission trigger";'
-          if old_title not in text:
-              raise SystemExit('loop title marker not found')
-          text = text.replace(old_title, new_title, 1)
+          text = text.replace(
+              '                "Toggle auto-chaining into the next mission";',
+              '                "Toggle mission looping and UI.Vision Start Mission trigger";',
+              1,
+          )
 
           old_reddit = '''        detectModalAndOpen();
     } else if (
@@ -141,42 +133,33 @@ jobs:
           if old_devvit not in text:
               raise SystemExit('Devvit bootstrap marker not found')
           text = text.replace(old_devvit, new_devvit, 1)
-
           script_path.write_text(text, encoding='utf-8')
 
           readme_path = Path('README.md')
           readme = readme_path.read_text(encoding='utf-8')
+          readme = readme.replace('Mobile Simple v3.16.15.2', 'Mobile Simple v3.16.15.3')
           readme = readme.replace(
-              '**Sword & Supper Auto Play Mobile Simple v3.16.15.2**',
-              '**Sword & Supper Auto Play Mobile Simple v3.16.15.3**'
+              '| `🔄` | Toggle automatic chaining into another mission |',
+              '| `🔄` | Toggle mission chaining and the UI.Vision Start Mission trigger |',
           )
-
-          controls_marker = '| `🔄` | Toggle automatic chaining into another mission |'
-          controls_replacement = '| `🔄` | Toggle mission chaining and the UI.Vision Start Mission trigger |'
-          readme = readme.replace(controls_marker, controls_replacement)
-
-          setup = '''
+          section = '''
 ## UI.Vision Start Mission trigger
 
-When the `🔄` Loop toggle is enabled and the inline **Start Mission** screen appears, Mobile Simple asks UI.Vision to run a Browser-storage macro named **`SwordSupperStartMission`**. It triggers once per appearance and resets after the Start Mission screen disappears.
-
-The UI.Vision macro must use a native action such as **XClick** for the visible Start Mission button. JavaScript and Selenium clicks are rejected by Devvit as untrusted events.
+With `🔄` Loop enabled, Mobile Simple detects the visible **Start Mission** screen and asks UI.Vision to run the Browser-storage macro **`SwordSupperStartMission`** once. It rearms after that screen disappears. The macro should use **XClick** for the visible Start Mission button.
 
 '''
-          insert_before = '## Features\n'
-          if setup.strip() not in readme and insert_before in readme:
-              readme = readme.replace(insert_before, setup + insert_before, 1)
-
+          if '## UI.Vision Start Mission trigger' not in readme:
+              readme = readme.replace('## Features\n', section + '## Features\n', 1)
           readme_path.write_text(readme, encoding='utf-8')
           PY
 
       - name: Validate JavaScript
         run: node --check sword-and-supper-autoplay-mobile-simple.user.js
 
-      - name: Commit patched script
+      - name: Commit patched files to PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add sword-and-supper-autoplay-mobile-simple.user.js README.md
           git diff --cached --quiet || git commit -m "Trigger UI.Vision Start Mission macro from Loop"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
