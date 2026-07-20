@@ -1,0 +1,39 @@
+name: Build Mobile Simple userscript
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sword-and-supper-autoplay.user.js'
+      - 'scripts/build_mobile_simple.py'
+      - '.github/workflows/build-mobile-simple.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Mobile Simple userscript
+        run: python scripts/build_mobile_simple.py
+
+      - name: Validate JavaScript syntax
+        run: node --check sword-and-supper-autoplay-mobile-simple.user.js
+
+      - name: Commit generated userscript
+        run: |
+          if git diff --quiet -- sword-and-supper-autoplay-mobile-simple.user.js && git ls-files --error-unmatch sword-and-supper-autoplay-mobile-simple.user.js >/dev/null 2>&1; then
+            echo "Mobile Simple userscript is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sword-and-supper-autoplay-mobile-simple.user.js
+          git commit -m "Generate Mobile Simple userscript"
+          git push
