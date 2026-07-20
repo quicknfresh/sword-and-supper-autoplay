@@ -1,24 +1,41 @@
 # Sword & Supper Auto Play
 
-A Tampermonkey userscript for **Sword & Supper** on Reddit, including Firefox Android compatibility fixes.
+Tampermonkey userscripts for **Sword & Supper** on Reddit.
 
 ## Install
 
-[![Install in Tampermonkey](https://img.shields.io/badge/Install%20in-Tampermonkey-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
+### Android Mobile Full
 
-> The experimental Android Mobile Lite build has been withdrawn because map creation, reward claiming and farming-gear equipping were not reliable. Android users should use the Standard version for now.
+Uses the complete Standard automation logic, with a touch-friendly bottom control panel for Android.
 
-> **Previously installed Mobile Lite?** Disable or delete it in Tampermonkey before installing the Standard version. Never enable both at once.
+[![Install Android Mobile Full](https://img.shields.io/badge/Install-Android%20Mobile%20Full-2E7D32?style=for-the-badge&logo=android)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay-mobile.user.js?full=1)
+
+### Standard version
+
+Recommended for desktop and available as a fallback on Android.
+
+[![Install Standard Version](https://img.shields.io/badge/Install-Standard%20Version-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
+
+> Enable only one Sword & Supper userscript at a time. Disable or delete the Standard version before enabling Mobile Full.
 
 ## Android installation
 
 1. Install **Tampermonkey** in Firefox for Android.
 2. Open **Firefox menu → Extensions → Tampermonkey → Permissions**.
 3. Allow access to both `reddit.com` and `devvit.net`.
-4. Tap the installation button above in Firefox.
-5. Confirm that the installation page contains the complete source and `@grant none`.
-6. Press **Install**.
-7. Open Sword & Supper in Firefox itself, not in the Reddit app's internal browser.
+4. Open the **Android Mobile Full** installation button above in Firefox.
+5. Press **Install** in Tampermonkey.
+6. Open Sword & Supper in Firefox itself, not in the Reddit app's internal browser.
+
+## Mobile Full panel
+
+- Large touch-friendly buttons in a two-row bottom panel
+- Collapse and expand control
+- Automatically collapses on the inline Reddit preview so it does not cover **Start Mission**
+- No blur or backdrop effects
+- Full Standard automation is loaded unchanged through `@require`
+
+The Start Mission button itself requires a genuine user or Android Accessibility tap because Devvit rejects JavaScript-generated untrusted events.
 
 ## Features
 
@@ -28,9 +45,7 @@ A Tampermonkey userscript for **Sword & Supper** on Reddit, including Firefox An
 - Three-stage mission creation
 - Optional mission looping
 - Optional farming-gear equipping
-- Saved preferences, panel position and panel size
-- Touch-compatible panel dragging and resizing
-- Firefox Android startup fixes
+- Saved preferences
 
 ## Controls
 
@@ -53,4 +68,4 @@ This is an unofficial community userscript and is not affiliated with Reddit or 
 
 ## Credits
 
-Original script by **Eric** (`u/echo-foxtrot-delta`). Firefox Android compatibility maintenance by **quicknfresh**.
+Original script by **Eric** (`u/echo-foxtrot-delta`). Firefox Android compatibility and mobile interface maintenance by **quicknfresh**.
