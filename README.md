@@ -2,16 +2,19 @@
 
 A Tampermonkey userscript for **Sword & Supper** on Reddit, including fixes for Firefox on Android.
 
-[![Install in Tampermonkey](https://img.shields.io/badge/Install%20in-Tampermonkey-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js)
+[![Install in Tampermonkey](https://img.shields.io/badge/Install%20in-Tampermonkey-00485B?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay.user.js?full=1)
+
+> **Previously installed version `3.16.15.1`?** That was an incorrect loader build. Delete it from Tampermonkey first, then use the install button above. The repository now serves the full autoplay script directly.
 
 ## Install
 
 1. Install the **Tampermonkey** extension in your browser.
-2. Tap the **Install in Tampermonkey** button above.
-3. Tampermonkey should open the installation screen automatically.
-4. Press **Install**.
-5. Allow Tampermonkey access to both `reddit.com` and `devvit.net`.
-6. Open Sword & Supper in a normal browser tab and reload the game.
+2. If Tampermonkey shows version `3.16.15.1` containing `GM_xmlhttpRequest`, delete that old script first.
+3. Tap the **Install in Tampermonkey** button above.
+4. Confirm that the installation screen shows the full autoplay source and `@grant none`, not the old loader.
+5. Press **Install**.
+6. Allow Tampermonkey access to both `reddit.com` and `devvit.net`.
+7. Open Sword & Supper in a normal browser tab and reload the game.
 
 ### Firefox Android
 
@@ -43,10 +46,6 @@ In Firefox, open **Menu → Extensions → Tampermonkey → Permissions** and al
 | `🧑‍🌾` | Toggle automatic farming-gear equipping |
 | `🗑️` | Clear remembered mission history |
 | `🔄` | Toggle automatic chaining into another mission |
-
-## Updates
-
-The userscript contains `@downloadURL` and `@updateURL` metadata, so Tampermonkey can check this repository for future versions.
 
 ## Disclaimer
 
