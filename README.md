@@ -12,7 +12,7 @@ Best for desktop and faster devices. Includes the full feature set and Firefox A
 
 ### Android Mobile Lite
 
-Recommended when the game animation is choppy on an Android phone. This separate version uses a single slower scheduler, simpler clicks, no console logging, and a lighter control panel without blur effects.
+Recommended when the game animation is choppy on an Android phone. Version **3.16.17** restores the full three-stage map-creation flow and farming-gear equipping while retaining slower polling and a lightweight control panel.
 
 [![Install Android Mobile Lite](https://img.shields.io/badge/Install-Android%20Mobile%20Lite-2E7D32?style=for-the-badge&logo=android)](https://raw.githubusercontent.com/quicknfresh/sword-and-supper-autoplay/main/sword-and-supper-autoplay-mobile-lite.user.js?full=1)
 
@@ -48,10 +48,11 @@ Recommended when the game animation is choppy on an Android phone. This separate
 - Core battle autoplay and skipping
 - Automatic skill, shrine, monolith, house and miniboss choices
 - Automatic item use and reward claiming
-- Automatic mission creation
+- Three-stage automatic mission creation
+- Optional farming-gear equipping
 - Optional mission looping
 - Lightweight draggable Android control panel
-- Reduced DOM polling and rendering overhead
+- Reduced polling and rendering overhead
 
 ## Controls
 
@@ -64,9 +65,10 @@ Recommended when the game animation is choppy on an Android phone. This separate
 | `🛖` | Toggle Yes/No for the mysterious building |
 | `👻` | Toggle fighting dangerous creatures |
 | `🗺️` | Toggle automatic map creation |
+| `🧑‍🌾` | Toggle automatic farming-gear equipping |
 | `🔄` | Toggle automatic chaining into another mission |
 
-The Standard version also includes `🧑‍🌾` for farming-gear equipping and `🗑️` for clearing remembered mission history.
+The Standard version additionally includes `🗑️` for clearing remembered mission history and editable preference lists.
 
 ## Disclaimer
 
