@@ -19,22 +19,204 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct userscript
+      - name: Reconstruct Standard userscript
         shell: bash
         run: |
           cat .build/part-*.b64 | base64 --decode > sword-and-supper-autoplay.user.js
           echo "47fd17b4f281496ce361492e1c217f33e99c397fbf13bd7f6a39e2cbbf784516  sword-and-supper-autoplay.user.js" | sha256sum --check
           node --check sword-and-supper-autoplay.user.js
 
-      - name: Commit generated userscript
+      - name: Patch Mobile Simple
         shell: bash
         run: |
-          if git diff --quiet -- sword-and-supper-autoplay.user.js && git ls-files --error-unmatch sword-and-supper-autoplay.user.js >/dev/null 2>&1; then
-            echo "Userscript is already up to date."
-            exit 0
-          fi
+          python - <<'PY'
+          from pathlib import Path
+
+          script_path = Path('sword-and-supper-autoplay-mobile-simple.user.js')
+          text = script_path.read_text(encoding='utf-8')
+
+          old_version = '// @version      3.16.15.2'
+          new_version = '// @version      3.16.15.3'
+          if old_version not in text:
+              raise SystemExit('Expected Mobile Simple v3.16.15.2 was not found')
+          text = text.replace(old_version, new_version, 1)
+
+          running_marker = '    let running = false;\n'
+          constants = '''    const UIVISION_MACRO_NAME = "SwordSupperStartMission";
+    const UIVISION_STORAGE_MODE = "browser";
+    const UIVISION_REQUEST_TYPE = "SWORD_SUPPER_UIVISION_START_MISSION";
+
+    let running = false;
+'''
+          if running_marker not in text:
+              raise SystemExit('running marker not found')
+          text = text.replace(running_marker, constants, 1)
+
+          detect_marker = '    function detectModalAndOpen() {\n'
+          bridge = '''    function installUiVisionBridge() {
+        window.addEventListener("message", (event) => {
+            const data = event.data;
+            if (!data || data.type !== UIVISION_REQUEST_TYPE) return;
+
+            let sourceHostname = "";
+            try {
+                sourceHostname = new URL(event.origin).hostname;
+            } catch (error) {
+                return;
+            }
+
+            if (!sourceHostname.endsWith("devvit.net")) return;
+
+            window.dispatchEvent(
+                new CustomEvent("kantuRunMacro", {
+                    detail: {
+                        name: UIVISION_MACRO_NAME,
+                        from: "bookmark",
+                        storageMode: UIVISION_STORAGE_MODE,
+                        closeRPA: 1,
+                    },
+                })
+            );
+        });
+    }
+
+    function startMissionUiVisionWatcher() {
+        let triggeredForCurrentScreen = false;
+
+        const check = () => {
+            const button = document.querySelector(".mc__button-area");
+            const visible = Boolean(
+                button &&
+                button.isConnected &&
+                button.getClientRects().length > 0
+            );
+
+            if (!CONFIG.loopEnabled || !visible) {
+                triggeredForCurrentScreen = false;
+                return;
+            }
+
+            if (triggeredForCurrentScreen) return;
+            triggeredForCurrentScreen = true;
+
+            if (window.parent !== window) {
+                window.parent.postMessage(
+                    { type: UIVISION_REQUEST_TYPE },
+                    "*"
+                );
+            }
+        };
+
+        setInterval(check, 1000);
+        check();
+    }
+
+    function detectModalAndOpen() {
+'''
+          if detect_marker not in text:
+              raise SystemExit('detectModalAndOpen marker not found')
+          text = text.replace(detect_marker, bridge, 1)
+
+          old_title = '                "Toggle auto-chaining into the next mission";'
+          new_title = '                "Toggle mission looping and UI.Vision Start Mission trigger";'
+          if old_title not in text:
+              raise SystemExit('Loop title marker not found')
+          text = text.replace(old_title, new_title, 1)
+
+          old_reddit = '''        detectModalAndOpen();
+    } else if (
+'''
+          new_reddit = '''        detectModalAndOpen();
+        installUiVisionBridge();
+    } else if (
+'''
+          if old_reddit not in text:
+              raise SystemExit('Reddit bootstrap marker not found')
+          text = text.replace(old_reddit, new_reddit, 1)
+
+          old_devvit = '''        log("Running inside actual game.");
+        runAutomation();
+'''
+          new_devvit = '''        log("Running inside actual game.");
+        runAutomation();
+        startMissionUiVisionWatcher();
+'''
+          if old_devvit not in text:
+              raise SystemExit('Devvit bootstrap marker not found')
+          text = text.replace(old_devvit, new_devvit, 1)
+          script_path.write_text(text, encoding='utf-8')
+
+          readme_path = Path('README.md')
+          readme = readme_path.read_text(encoding='utf-8')
+          readme = readme.replace('Mobile Simple v3.16.15.2', 'Mobile Simple v3.16.15.3')
+          readme = readme.replace(
+              '| `🔄` | Toggle automatic chaining into another mission |',
+              '| `🔄` | Toggle mission chaining and the UI.Vision Start Mission trigger |',
+          )
+          section = '''
+## UI.Vision Start Mission trigger
+
+With `🔄` Loop enabled, Mobile Simple detects the visible **Start Mission** screen and asks UI.Vision to run the Browser-storage macro **`SwordSupperStartMission`** once. It rearms after that screen disappears. The macro should use **XClick** for the visible Start Mission button.
+
+'''
+          if '## UI.Vision Start Mission trigger' not in readme:
+              readme = readme.replace('## Features\n', section + '## Features\n', 1)
+          readme_path.write_text(readme, encoding='utf-8')
+          PY
+
+          node --check sword-and-supper-autoplay-mobile-simple.user.js
+
+      - name: Restore normal workflow file
+        shell: bash
+        run: |
+          cat > .github/workflows/build-userscript.yml <<'YAML'
+          name: Build userscript
+
+          on:
+            push:
+              branches:
+                - main
+              paths:
+                - '.build/**'
+                - '.github/workflows/build-userscript.yml'
+            workflow_dispatch:
+
+          permissions:
+            contents: write
+
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+
+                - name: Reconstruct userscript
+                  shell: bash
+                  run: |
+                    cat .build/part-*.b64 | base64 --decode > sword-and-supper-autoplay.user.js
+                    echo "47fd17b4f281496ce361492e1c217f33e99c397fbf13bd7f6a39e2cbbf784516  sword-and-supper-autoplay.user.js" | sha256sum --check
+                    node --check sword-and-supper-autoplay.user.js
+
+                - name: Commit generated userscript
+                  shell: bash
+                  run: |
+                    if git diff --quiet -- sword-and-supper-autoplay.user.js && git ls-files --error-unmatch sword-and-supper-autoplay.user.js >/dev/null 2>&1; then
+                      echo "Userscript is already up to date."
+                      exit 0
+                    fi
+                    git config user.name "github-actions[bot]"
+                    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                    git add sword-and-supper-autoplay.user.js
+                    git commit -m "Add Firefox Android userscript"
+                    git push
+          YAML
+
+      - name: Commit Mobile Simple update
+        shell: bash
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add sword-and-supper-autoplay.user.js
-          git commit -m "Add Firefox Android userscript"
+          git add sword-and-supper-autoplay.user.js sword-and-supper-autoplay-mobile-simple.user.js README.md .github/workflows/build-userscript.yml
+          git commit -m "Trigger UI.Vision Start Mission macro from Loop"
           git push
