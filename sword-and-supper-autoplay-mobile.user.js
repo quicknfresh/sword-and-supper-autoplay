@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sword & Supper Mobile UI Skin
 // @namespace    https://github.com/quicknfresh/sword-and-supper-autoplay
-// @version      1.0.0
+// @version      3.16.21
 // @description  Lightweight Android-friendly styling for the Standard Sword & Supper autoplay control panel.
 // @author       quicknfresh
 // @match        *://*.devvit.net/*
@@ -19,7 +19,6 @@
     const style = document.createElement("style");
     style.id = "ss-mobile-ui-skin";
     style.textContent = `
-        /* Hide controls while the inline Reddit preview is waiting for a real Start Mission tap. */
         body:has(.mc__button-area) #ios-ui-panel-wrapper {
             display: none !important;
         }
